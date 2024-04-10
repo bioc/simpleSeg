@@ -138,18 +138,50 @@ simpleSeg <- function(image,
   }
   # cellBody input validation
   valid_cellbody <- c("none", "dilate", "discModel")
-  if (!(cellBody %in% valid_cellbody)) {
-    # Throw informative error message.
-    stop(
-      paste0(
-        sprintf(
-          "Invalid method of cytoplasm identification: '%s'. Must be ",
-          cellBody
-        ),
-        paste(valid_cellbody, collapse = ", "),
-        "."
+  if (!all(cellBody %in% valid_cellbody)) {
+    idx <- cellBody %in% dimnames(image[[1]])[[3]]
+    # if all elements of cellBody are markers
+    if (all(idx)) {
+      useCellMarkers <- TRUE
+    } else if (any(idx) || length(idx) > 1) { # if some are markers
+      if (sum(!idx) > 1) {
+        verb <- " are"
+        article <- ""
+        plural <- "s"
+      } else {
+        verb <- " is"
+        article <- " a"
+        plural <- ""
+      }
+      stop(
+        paste0(
+          paste(cellBody[!idx], collapse = ", "),
+          verb,
+          " not",
+          article,
+          " marker",
+          plural,
+          " included in the data.\n",
+          "Choose cell body markers from the following: ",
+          paste(dimnames(image[[1]])[[3]], collapse = ", "),
+          ".\n Alternatively, choose an approximation method (",
+          paste(valid_cellbody, collapse = ", "),
+          ")."
+        )
       )
-    )
+    } else {
+      # Throw informative error message.
+      stop(
+        paste0(
+          sprintf(
+            "Invalid method of cytoplasm identification: '%s'. Must be ",
+            cellBody
+          ),
+          paste(valid_cellbody, collapse = ", "),
+          "or a list of one or more markers included in the data."
+        )
+      )
+    }
   }
 
   # transform input validation
@@ -194,7 +226,7 @@ simpleSeg <- function(image,
   }
 
   wholeCell <- FALSE
-  if (cellBody == "dilate") {
+  if (!useCellMarkers && cellBody == "dilate") {
     wholeCell <- TRUE
   }
 
@@ -224,7 +256,7 @@ simpleSeg <- function(image,
   )
 
   # if dilate or none
-  if (cellBody %in% c("dilate", "none")) {
+  if (!useCellMarkers && cellBody %in% c("dilate", "none")) {
     nmask <- lapply(nmask, EBImage::Image)
     cyto.nmask <- cytomapper::CytoImageList(nmask)
 
@@ -244,7 +276,7 @@ simpleSeg <- function(image,
     return(cyto.nmask)
   }
 
-  if (cellBody == "discModel") {
+  if (!useCellMarkers && cellBody == "discModel") {
     cells <- .cytSegParallel(nmask,
       image,
       sizeSelection = sizeSelection,
@@ -279,7 +311,7 @@ simpleSeg <- function(image,
     return(cyto.mask)
   }
 
-  if (any(cellBody %in% dimnames(image[[1]])[[3]])) {
+  if (useCellMarkers) {
     cells <- .cytSeg2Parallel(nmask,
       image,
       channel = cellBody,
