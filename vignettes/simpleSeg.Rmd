@@ -44,7 +44,7 @@ library(cytomapper)
 ```{r, eval = FALSE}
 # Install the package from Bioconductor
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
-    install.packages("BiocManager")
+  install.packages("BiocManager")
 }
 
 BiocManager::install("simpleSeg")
@@ -60,7 +60,6 @@ The `simpleSeg` package extends existing bioconductor packages such as `cytomapp
 In the following we will reanalyse two MIBI-TOF images from [(Risom et al., 2022)](https://www.sciencedirect.com/science/article/pii/S0092867421014860?via%3Dihub#!) profiling the spatial landscape of ductal carcinoma in situ (DCIS), which is a pre-invasive lesion that is thought to be a precursor to invasive breast cancer (IBC). These images are stored in the "extdata" folder in the package. When the path to this folder is identified, we can read these images into R using `readImage` from `EBImage` and store these as a `CytoImageList` using the `cytomapper` package.
 
 ```{r}
-
 # Get path to image directory
 pathToImages <- system.file("extdata", package = "simpleSeg")
 
@@ -87,9 +86,6 @@ images <- lapply(files, EBImage::readImage, as.is = TRUE)
 # Convert to cytoImageList
 images <- cytomapper::CytoImageList(images)
 mcols(images)$imageID <- names(images)
-
-
-
 ```
 
 
@@ -102,10 +98,10 @@ mcols(images)$imageID <- names(images)
 `simpleSeg` accepts an `Image`, `list` of `Image`'s, or `CytoImageList` as input and generates a `CytoImageList` of masks as output. Here we will use the histone H3 channel in the image as a nuclei marker for segmentation. By default, `simpleseg` will isolate individual nuclei by watershedding using a combination of the intensity of this marker and a distance map. Nuclei are dilated out by 3 pixels to capture the cytoplasm. The user may also specify simple image transformations using the `transform` argument.
 
 ```{r}
-
 masks <- simpleSeg::simpleSeg(images,
-                              nucleus = "HH3",
-                              transform = "sqrt")
+  nucleus = "HH3",
+  transform = "sqrt"
+)
 ```
 
 ## Visualise separation
@@ -115,7 +111,6 @@ The `display` and `colorLabels` functions in `EBImage` make it very easy to exam
 ```{r}
 # Visualise segmentation performance one way.
 EBImage::display(colorLabels(masks[[1]]))
-
 ```
 
 ## Visualise outlines
@@ -124,26 +119,29 @@ EBImage::display(colorLabels(masks[[1]]))
 The `plotPixels` function in `cytomapper` make it easy to overlay the masks on top of the intensities of 6 markers. Here we can see that the segmentation appears to be performing reasonably.
 
 ```{r}
-
 # Visualise segmentation performance another way.
-cytomapper::plotPixels(image = images[1], 
-                       mask = masks[1], 
-                       img_id = "imageID", 
-                       colour_by = c("PanKRT", "GLUT1", "HH3", "CD3", "CD20"), 
-                       display = "single",
-                       colour = list(HH3 = c("black","blue"), 
-                                     CD3 = c("black","purple"),
-                                     CD20 = c("black","green"),
-                                     GLUT1 = c("black", "red"),
-                                     PanKRT = c("black", "yellow")),
-                       bcg = list(HH3 = c(0, 1, 1.5), 
-                                     CD3 = c(0, 1, 1.5),
-                                     CD20 = c(0, 1, 1.5),
-                                     GLUT1 = c(0, 1, 1.5),
-                                     PanKRT = c(0, 1, 1.5)),
-                       legend = NULL)
-
-
+cytomapper::plotPixels(
+  image = images[1],
+  mask = masks[1],
+  img_id = "imageID",
+  colour_by = c("PanKRT", "GLUT1", "HH3", "CD3", "CD20"),
+  display = "single",
+  colour = list(
+    HH3 = c("black", "blue"),
+    CD3 = c("black", "purple"),
+    CD20 = c("black", "green"),
+    GLUT1 = c("black", "red"),
+    PanKRT = c("black", "yellow")
+  ),
+  bcg = list(
+    HH3 = c(0, 1, 1.5),
+    CD3 = c(0, 1, 1.5),
+    CD20 = c(0, 1, 1.5),
+    GLUT1 = c(0, 1, 1.5),
+    PanKRT = c(0, 1, 1.5)
+  ),
+  legend = NULL
+)
 ```
 
 ## Methods of Watershedding
@@ -174,8 +172,9 @@ Method | Description
 
 ```{r parallel example}
 masks <- simpleSeg::simpleSeg(images,
-                              nucleus = "HH3",
-                              cores = 1)
+  nucleus = "HH3",
+  cores = 1
+)
 ```
 
 
@@ -202,13 +201,14 @@ Method | Description
 
 ```{r}
 # Transform and normalise the marker expression of each cell type.
-# Use a square root transform, then trimmed the 99 quantile 
+# Use a square root transform, then trimmed the 99 quantile
 cellSCE <- normalizeCells(cellSCE,
-                          assayIn = "counts",
-                          assayOut = "norm",
-                          imageID = "imageID",
-                          transformation = "sqrt",
-                          method = c("trim99", "minMax"))
+  assayIn = "counts",
+  assayOut = "norm",
+  imageID = "imageID",
+  transformation = "sqrt",
+  method = c("trim99", "minMax")
+)
 ```
 
 
@@ -217,16 +217,14 @@ We could check to see if the marker intensities of each cell require some form o
 
 
 ```{r, fig.width=5, fig.height=5}
-
 # Extract marker data and bind with information about images
 df <- as.data.frame(cbind(colData(cellSCE), t(assay(cellSCE, "counts"))))
 
 # Plots densities of PanKRT for each image.
-ggplot(df, aes(x = PanKRT, colour = imageID)) + 
-  geom_density() + 
+ggplot(df, aes(x = PanKRT, colour = imageID)) +
+  geom_density() +
   labs(x = "PanKRT expression") +
   theme_minimal()
-
 ```
 
 
@@ -234,20 +232,14 @@ We can see that the normalised data stored in the norm assay appears more bimoda
 
 
 ```{r, fig.width=5, fig.height=5}
-
 # Extract normalised marker information.
 df <- as.data.frame(cbind(colData(cellSCE), t(assay(cellSCE, "norm"))))
 
 # Plots densities of normalised PanKRT for each image.
-ggplot(df, aes(x = PanKRT, colour = imageID)) + 
-  geom_density() + 
+ggplot(df, aes(x = PanKRT, colour = imageID)) +
+  geom_density() +
   labs(x = "PanKRT expression") +
   theme_minimal()
-
-
-
-
-
 ```
 
 
