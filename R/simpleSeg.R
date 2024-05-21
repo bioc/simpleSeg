@@ -137,6 +137,7 @@ simpleSeg <- function(image,
     )
   }
   # cellBody input validation
+  useCellMarkers <- FALSE
   valid_cellbody <- c("none", "dilate", "discModel")
   if (!all(cellBody %in% valid_cellbody)) {
     idx <- cellBody %in% dimnames(image[[1]])[[3]]
